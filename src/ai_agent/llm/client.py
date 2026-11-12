@@ -1,13 +1,18 @@
-from openai import AsyncOpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
 from ai_agent.config import settings
 
-client = AsyncOpenAI(api_key=settings.openai_api_key)
+model = ChatOpenAI(model=settings.openai_model, api_key=settings.openai_api_key)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant. Answer the user's question prescisely and concisely."),
+    ("user", "{message}"),
+])
+
+chain = prompt | model
 
 
 async def ask(message: str) -> str:
-    response = await client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[{"role": "user", "content": message}],
-    )
-    print(f"response:: {response}")
-    return response.choices[0].message.content
+    result = await chain.ainvoke({"message": message})
+    print(f"Result: {result}")
+    return result.content
